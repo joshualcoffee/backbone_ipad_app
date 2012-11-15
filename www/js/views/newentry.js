@@ -1,6 +1,6 @@
 window.NewView = Backbone.View.extend({
 
-    initialize: function() {
+    initialize: function(options) {
     var tpl = window.templateLoader;
     this.template = _.template(tpl.get('new'));
     },
@@ -11,26 +11,25 @@ window.NewView = Backbone.View.extend({
 
     render: function(eventName) {
     console.log('render');
+    
     $(this.el).html(this.template());
     return this;
     },
 
-    save:function(){
+    save:function(event){
       var hash = CryptoJS.MD5(device.uuid+$.now());
       this.model.create({
-        title: this.$(".name").val(),
+        name: this.$(".name").val(),
         description: "hello",
-        hash: hash,
-        updated_at: "now",
-        created_at: "now",
-        update_flag: 0
-      },{ error: this.trigger('error'), 
-        success: function(){
+        hash: '"'+hash+'"',
+        updated_at: $.now(),
+        created_at: $.now()
+      },{ 
+        success: function(model){
+          MyApp.vent.trigger("add_entry", model);
           app.navigate('', true);
         } 
       });
-
-      
 
       event.preventDefault();
     }
@@ -44,6 +43,7 @@ window.EditView = Backbone.View.extend({
     this.idAttribute = 'remote_id';
     this.template = _.template(tpl.get('edit'));
     this.model.bind("reset", this.render, this);
+    
     },
     
     events: {
@@ -55,11 +55,11 @@ window.EditView = Backbone.View.extend({
     $(this.el).html(this.template(this.model.toJSON()));
     return this;
     },
-    
+
     edit:function(){
 
       this.model.set({
-        title: this.$(".name").val(),
+        name: this.$(".name").val(),
         description: this.model.get("description"),
         updated_at: "now",
         created_at: "now",
@@ -68,7 +68,6 @@ window.EditView = Backbone.View.extend({
 
       this.model.save( {}, { error: this.trigger('error'), 
         success: function(){
-          alert("hi");
           app.navigate('', true);
         } 
       });

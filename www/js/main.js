@@ -1,4 +1,6 @@
 // Asynchronous template loader
+MyApp = {};
+MyApp.vent = _.extend({}, Backbone.Events);
 window.templateLoader = {
 
     // Map of preloaded templates for the app
@@ -89,19 +91,18 @@ window.startApp = function () {
     window.table = "funrun";
     var wineDAO = new WineDAO(self.db,window.table);
     
-    var tablesync = new serversync(db);
-    tablesync.init();
-    /*setInterval(function(){
+    
 
-        tablesync.init();
-    },10000);
-*/
     
     wineDAO.populate(function () {
         this.templateLoader.load(['wine-list', 'wine-details', 'wine-list-item', 'new','edit'], function () {
             self.app = new AppRouter();
             wineDAO.set_up_collections();
             Backbone.history.start();
+            var tablesync = new serversync(db);
+            setInterval(function(){
+                tablesync.init();
+            },10000);
         }, table);
     })
 }

@@ -1,6 +1,6 @@
 window.WineDAO = function (db) {
     this.db = db;
-         
+       
 };
 
 _.extend(window.WineDAO.prototype, {
@@ -27,12 +27,14 @@ _.extend(window.WineDAO.prototype, {
 
     create:function (model, callback, table) {
         var model_atts = model.toJSON();
+        alert("create");
         this.db.transaction(
 
             function (tx) {
-                var sql = "INSERT INTO "+table+" VALUES ('"+model_atts.hash+"','"+model_atts.title+"','"+model_atts.description+"',"+$.now()+","+$.now()+")";
+                var sql = "INSERT INTO "+table+" VALUES ("+model_atts.hash+",'"+model_atts.name+"','"+model_atts.description+"',"+$.now()+","+$.now()+")";
                 tx.executeSql(sql, [], function (tx, results) {
-                    model.set({remote_id: "'"+model_atts.hash+"'"});
+                    var hash = model_atts.hash.replace(/['"]/g,'');
+                    model.set({remote_id: hash});
                     callback(model.toJSON());
                 });
             },
@@ -47,7 +49,7 @@ _.extend(window.WineDAO.prototype, {
         var model = model.toJSON();
         this.db.transaction(
             function (tx) {
-                tx.executeSql('UPDATE funrun SET name="'+model.title+'",updated_at =DATETIME("now") WHERE remote_id="'+model.remote_id+'"',[], function (tx, results) {
+                tx.executeSql('UPDATE funrun SET name="'+model.name+'",updated_at ='+$.now()+' WHERE remote_id="'+model.remote_id+'"',[], function (tx, results) {
                     var len = results.rows.length;
                     var entry = [];
                     for (var i = 0; i < len; i++) {
@@ -77,7 +79,7 @@ _.extend(window.WineDAO.prototype, {
         this.db.transaction(
             function (tx) {
                 console.log('Dropping WINE table');
-                
+                /*
                 tx.executeSql('DROP TABLE IF EXISTS funrun');
                 var sql =
                     "CREATE TABLE IF NOT EXISTS funrun ( " +
@@ -103,10 +105,10 @@ _.extend(window.WineDAO.prototype, {
                 $.each(rows,function(i,row){
 
                     //alert("'"+row.remote_id+"','"+row.title+"','test','"+row.created_at+"','"+row.created_at+"'");
-                    tx.executeSql("INSERT INTO funrun VALUES ('"+row.remote_id+"','"+row.title+"','test',"+row.created_at+","+row.created_at+")");
+                    tx.executeSql("INSERT INTO funrun VALUES ('"+row.remote_id+"','"+row.name+"','test',"+row.created_at+","+row.created_at+")");
                 });
                 
-
+            */
                 
             },
 
@@ -124,7 +126,8 @@ _.extend(window.WineDAO.prototype, {
 
     set_up_collections:function(){
         window.entries = new WineCollection();
-        window.entries.fetch({});
+        window.entries.fetch();
+        
     }
 });
 
@@ -134,17 +137,18 @@ window.AppRouter = Backbone.Router.extend({
 
     routes:{
         "":"list",
+        "page/:page":"list",
         "wines/:remote_id":"wineDetails",
         "newentry":"newEntry",
         "editentry/:remote_id":"editEntry"
     },
 
-    list:function () {
+    list:function (page) {
         console.log("route: list ");
         var self = this;
+        this.page =   typeof page !== 'undefined' ? page : 1;
         this.before(function () {
-            window.entries.fetch();
-            self.showView(new WineListView({model:window.entries}));
+            self.showView(new WineListView({model:window.entries, page:self.page}));
         });
     },
 
@@ -157,19 +161,17 @@ window.AppRouter = Backbone.Router.extend({
         });
     },
     newEntry:function(){
-        console.log('details');
         var self = this;
         this.before(function () {
-            var wine = window.entries;
-            self.showView(new NewView({model:wine}));
+            self.showView(new NewView({model:window.entries}));
         });
     },
     editEntry:function(id){
         console.log('edit entry');
+        alert("go");
         var self = this;
         this.before(function () {
             var wine = window.entries.where({remote_id:id})[0];
-            var list = window.entries;
             self.showView(new EditView({model:wine}));
         });
     },
@@ -184,7 +186,9 @@ window.AppRouter = Backbone.Router.extend({
     },
 
     before:function (callback) {
+        
         callback();
+        
     }
 
 });

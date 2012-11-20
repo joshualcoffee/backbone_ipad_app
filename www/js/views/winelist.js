@@ -16,7 +16,6 @@ window.WineListView = Backbone.View.extend({
     },
 
     render: function(eventName) {
-        alert("go");
         console.log('list render');
         $(this.el).html(this.template());
         var ul = $('ul', $(this.el));
